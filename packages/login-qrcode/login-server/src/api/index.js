@@ -1,27 +1,16 @@
-const express = require('express')
 require('dotenv').config()
-const postgres = require('@metamodules/postgres')()
 
+const path = require('path') 
+const express = require('express')
+const cors = require('cors')
+const bodyParser = require('body-parser')
+
+const assetPath = path.join(__dirname, '../assets/')
 const app = express()
-const port = 4000
 
-postgres.query(`CREATE TABLE IF NOT EXISTS clicks (
-  id BIGSERIAL PRIMARY KEY,
-  created_at TIMESTAMP DEFAULT NOW()
-)`)
+app.use(cors())
+app.use('/static', express.static(assetPath))
+app.use(bodyParser.json())
 
-app.get('/api/count', (req, res) => {
-  postgres.query('SELECT count(*) AS count FROM clicks', (err, resp) => {
-    res.send({ count: resp.rows[0].count || 0 })
-  })
-})
-
-app.post('/api/count/increment', (req, res) => {
-  postgres.query('INSERT INTO clicks DEFAULT VALUES', (err, insert) => {
-    postgres.query('SELECT count(*) AS count FROM clicks', (err, resp) => {
-      res.send({ count: resp.rows[0].count || 0 })
-    })
-  })
-})
-
-app.listen(port, () => console.log(`Example backend API listening on port ${port}!`))
+console.log(__dirname, assetPath);
+module.exports = app

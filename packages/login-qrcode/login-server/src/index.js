@@ -1,6 +1,17 @@
-// "Create React App" tooling expects to find the WWW root here,
-// so we simply use this file to import the ./www directory.
-//
-// For the backend, we set the container's entrypoint to src/api/index.js
+// For the backend, we set the container's entryPoint to src/index.js
 
-module.exports = require('./www')
+const app = require('./api')
+
+const { createWss } = require('./ws')
+const { initWebsocket } = require('./ws/socket')
+
+require('./controller/login')
+
+
+const port = 4000
+
+app.listen(port, () => console.log(`Example backend API listening on port ${port}!`))
+
+// websocket 初始化
+const wss = createWss(app)
+initWebsocket(wss)
