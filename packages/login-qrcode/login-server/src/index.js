@@ -8,7 +8,7 @@ const { initWebsocket } = require('./ws/socket')
 require('./controller/login')
 
 
-const port = 4000
+const port = 8080
 
 app.listen(port, () => console.log(`Example backend API listening on port ${port}!`))
 

@@ -4,15 +4,14 @@ let wss = null
 
 const getWss = () => wss
 
-const createWss = (server) => {
+const createWss = () => {
   if (!wss) {
     wss = new WebSocket.Server({
-      server: server,
+      port: 8081,
     })
   }
 
   return wss
-
 }
 
 module.exports = {

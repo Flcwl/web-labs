@@ -1,6 +1,4 @@
-const uuid = require('uuid')
-
-const sendData = (client, status, data) => {
+const sendData = (client, data, status = 200) => {
   if (client && client.send) {
     client.send(
       JSON.stringify({
@@ -18,9 +16,11 @@ const initWebsocket = (wss) => {
     ws.on('message', (msg) => {
       console.log(`[SERVER] Received: ${msg}`)
       // 发送数据
-      const fn = loginMessageHandler[msg]
+      const res = JSON.parse(msg)
+      const fn = messageHandler[res.type]
+
       if (fn) {
-        fn(ws)
+        fn(ws, res.data)
       } else {
         ws.send('bad command!')
       }
@@ -28,20 +28,17 @@ const initWebsocket = (wss) => {
   })
 }
 
-// 处理登录消息，根据客户端发来的消息匹配相应的业务逻辑操作函数
-const loginMessageHandler = {
-  GET_CODE: (ws) => {
-    const uid = uuid.v4()
-    console.log('获取二维码----' + uid)
+const messageHandler = {
+  START_LOGIN: (ws, data) => {
+    console.log('开始二维码登录----', data)
 
     ws.loginCondition = {
-      uuid: uid,
-      status: 0,
+      uuid: data.uuid,
+      status: 0
     }
-    
-    sendData(ws, 'ok', {
-      uuid: uid,
-      type: 'CODE_ID',
+
+    sendData(ws, {
+      type: 'SHOW_QR_CODE',
     })
   },
 }

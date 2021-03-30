@@ -38,8 +38,8 @@ app.get('/login/qrcode', (req, res) => {
 
   res.json(
     genJson({
-      // codeId: uid,
-      qrImage: `http://localhost:4000/static/${imgFile}`,
+      codeId: uid,
+      qrImage: `http://localhost:8080/static/${imgFile}`,
     })
   )
 
@@ -60,7 +60,7 @@ app.get('/login/token', (req, res) => {
   res.end()
 })
 
-// 扫码确认登录，范围 userToken
+// 扫码 + 确认登录，最终返回 userToken
 app.get('/login/confirm', (req, res) => {
   const { token } = req.body
   const tokenData = verify(token)
@@ -80,18 +80,18 @@ app.get('/login/confirm', (req, res) => {
       switch (targetClient.loginCondition.status) {
         case 0:
           res.json(genJson(null, '二维码扫描成功，请点击确认按钮以确认登录~'))
-          sendData(targetClient, 'ok', {
+          sendData(targetClient, {
             uuid: uuid,
-            type: 'SCANNED',
+            type: 'SCANNED_QR_CODE',
           })
 
           targetClient.loginCondition.status++
           break
         case 1:
           res.json(genJson(null, '登录成功~'))
-          sendData(targetClient, 'ok', {
+          sendData(targetClient, {
             uuid,
-            type: 'SUCCESS',
+            type: 'LOGIN_SUCCESS',
             token: generate(tokenData.userId),
           })
 
