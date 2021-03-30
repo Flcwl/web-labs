@@ -16,6 +16,7 @@ function App() {
     qrImage: '',
   })
   const codeWebsocketRef = useRef(null)
+  const [userToken, setUserToken] = useState('')
 
   const showQrCode = useCallback(() => {
     setQRCodeLoginStatus(qrcodeLoginStatusEnum.SHOW_QRCODE)
@@ -25,7 +26,8 @@ function App() {
     setQRCodeLoginStatus(qrcodeLoginStatusEnum.SCANNED_QRCODE)
   }, [])
 
-  const loginSuccess = useCallback(() => {
+  const loginSuccess = useCallback((res) => {
+    setUserToken(res.data.token)
     setQRCodeLoginStatus(qrcodeLoginStatusEnum.SUCCESS_LOGIN)
     codeWebsocketRef.current.close()
   }, [])
@@ -42,6 +44,35 @@ function App() {
     }
   }, [showQrCode, scannedQrCode, loginSuccess])
 
+  const setupSocket = useCallback(
+    (codeId) => {
+      let codeWebsocket = codeWebsocketRef.current
+
+      if (codeWebsocket) {
+        codeWebsocket.close()
+      }
+
+      // 建立 websocket 服务
+      codeWebsocket = new WebSocket('ws://localhost:8081')
+      codeWebsocketRef.current = codeWebsocket
+
+      codeWebsocket.onmessage = (e) => {
+        const res = JSON.parse(e.data)
+        console.log('Websocket:', res)
+        messageHandler[res.data.type]?.(res)
+      }
+
+      // 连接建立成功
+      codeWebsocket.onopen = () => {
+        const msg = genWsData('START_LOGIN', {
+          uuid: codeId,
+        })
+        codeWebsocket.send(msg)
+      }
+    },
+    [messageHandler]
+  )
+
   const getQrCode = useCallback(() => {
     fetch('http://localhost:8080/login/qrcode')
       .then((res) => {
@@ -50,60 +81,21 @@ function App() {
       .then((res) => {
         if (res.code === 200) {
           setQRCode(res.data)
+          setupSocket(res.data.codeId)
         }
       })
-  }, [])
-
-  const setupSocket = useCallback(() => {
-    let codeWebsocket = codeWebsocketRef.current
-
-    if (codeWebsocket) {
-      codeWebsocket.close()
-    }
-
-    // 建立 websocket 服务
-    codeWebsocket = new WebSocket('ws://localhost:8081')
-    codeWebsocketRef.current = codeWebsocket
-
-    codeWebsocket.onmessage = (e) => {
-      const res = JSON.parse(e.data)
-      console.log(res)
-      messageHandler[res.data.type]?.(res)
-    }
-
-    // 连接建立成功
-    codeWebsocket.onopen = () => {
-      const msg = genWsData('START_LOGIN', {
-        uuid: qRCode.codeId
-      })
-      codeWebsocket.send(msg)
-    }
-  }, [messageHandler, qRCode])
-
-  const initQRCodeLogin = useCallback(() => {
-    getQrCode()
-    setupSocket()
-  }, [getQrCode, setupSocket])
+  }, [setupSocket])
 
   return (
     <div className="App">
       <h1>扫码登录测试</h1>
       <div>
         <button
-          id="show-code-button"
           onClick={() => {
-            initQRCodeLogin()
+            getQrCode()
           }}
         >
           点我唤起扫码框
-        </button>
-        <button
-          id="hide-code-button"
-          onClick={() => {
-            setQRCodeLoginStatus(qrcodeLoginStatusEnum.UNSET)
-          }}
-        >
-          点我关闭扫码框
         </button>
         {(() => {
           switch (qRCodeLoginStatus) {
@@ -118,13 +110,26 @@ function App() {
             case qrcodeLoginStatusEnum.SCANNED_QRCODE:
               return (
                 <div>
-                  <div>扫描成功，请点击确认按钮以登录</div>
+                  <div>扫描成功，请在手机端继续操作，点击确认按钮以登录</div>
                 </div>
               )
             case qrcodeLoginStatusEnum.SUCCESS_LOGIN:
               return (
                 <div>
-                  <div>登录成功~</div>
+                  <div>恭喜，登录成功~</div>
+                  <div>
+                    <p
+                      style={{
+                        width: '100%',
+                        textAlign: 'center',
+                        padding: '10px 40px',
+                        boxSizing: 'border-box',
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      {userToken}
+                    </p>
+                  </div>
                 </div>
               )
             default:
@@ -140,10 +145,10 @@ function App() {
   )
 }
 
-function genWsData (type, data) {
+function genWsData(type, data) {
   const _data = {
     type,
-    data
+    data,
   }
 
   return JSON.stringify(_data)

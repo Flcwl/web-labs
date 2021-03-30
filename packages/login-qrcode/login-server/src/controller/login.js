@@ -61,14 +61,13 @@ app.get('/login/token', (req, res) => {
 })
 
 // 扫码 + 确认登录，最终返回 userToken
-app.get('/login/confirm', (req, res) => {
-  const { token } = req.body
+app.post('/login/confirm', (req, res) => {
+  const { token, uuid } = req.body
   const tokenData = verify(token)
-
-  const uuid = req.body['uuid']
+  console.log('开始二维码扫码 + 确认登录----', req.body)
 
   const wss = getWss()
-
+  console.log(wss.clients, tokenData);
   if (wss && wss.clients && tokenData) {
     // 可以在 wss.clients 中找到相应的客户端
     const clients = [...wss.clients]
@@ -92,7 +91,8 @@ app.get('/login/confirm', (req, res) => {
           sendData(targetClient, {
             uuid,
             type: 'LOGIN_SUCCESS',
-            token: generate(tokenData.userId),
+            token,
+            // token: generate(tokenData.userId),
           })
 
           targetClient.loginCondition.status++
