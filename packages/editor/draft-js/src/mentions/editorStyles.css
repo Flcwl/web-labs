@@ -1,0 +1,9 @@
+.editor {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.editor :global(.public-DraftEditor-content) {
+  min-height: 140px;
+}
