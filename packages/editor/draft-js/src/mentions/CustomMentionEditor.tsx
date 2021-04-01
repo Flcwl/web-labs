@@ -97,10 +97,11 @@ export default function CustomMentionEditor(): ReactElement {
   const { MentionSuggestions, plugins } = useMemo(() => {
     const mentionPlugin = createMentionPlugin({
       entityMutability: "IMMUTABLE",
+      mentionPrefix: "@",
+      mentionTrigger: '@',
       // theme: mentionsStyles,
       // positionSuggestions,
-      mentionPrefix: "@",
-      supportWhitespace: true
+      // supportWhitespace: true
     });
     // eslint-disable-next-line no-shadow
     const { MentionSuggestions } = mentionPlugin;
